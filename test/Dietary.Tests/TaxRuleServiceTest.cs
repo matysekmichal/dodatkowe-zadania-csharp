@@ -1,0 +1,316 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using LegacyFighter.Dietary.Models;
+using Xunit;
+
+namespace LegacyFighter.Dietary.Tests
+{
+    public sealed class TaxRuleServiceTest : IDisposable
+    {
+        [Fact]
+        public async Task ItCanAddLinearTaxRuleToNewTaxConfigAndNotApplyItToInitialOrders()
+        {
+            // Arrange && Act
+            await _taxRuleService.AddTaxRuleToCountryAsync(
+                "PL",
+                1,
+                5,
+                "0001");
+
+            // Assert
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+
+            Assert.Single(
+                taxConfig.TaxRules
+                    .Where(taxRule => taxRule.AFactor.Equals(1) &&
+                                      taxRule.BFactor.Equals(5) &&
+                                      taxRule.IsLinear.Equals(true) &&
+                                      taxRule.IsSquare.Equals(false) &&
+                                      taxRule.TaxCode.EndsWith("0001")));
+
+            var orders = await _orderRepository.FindByOrderStateAsync(Order.OrderState.Initial);
+            var order = orders.FirstOrDefault(order => order.CustomerOrderGroup.Customer.Type.Equals(Customer.CustomerType.Person));
+
+            Assert.NotNull(order);
+            Assert.Empty(order.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("0001")));
+        }
+
+        [Fact]
+        public async Task ItCanAddLinearTaxRuleToExistingTaxConfigAndApplyItToInitialOrders()
+        {
+            // Arrange
+            await _taxRuleService.AddTaxRuleToCountryAsync(
+                "PL",
+                1,
+                5,
+                "0001");
+
+            // Act
+            await _taxRuleService.AddTaxRuleToCountryAsync(
+                "PL",
+                3,
+                2,
+                "0002");
+
+            // Assert
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+
+            Assert.Single(
+                taxConfig.TaxRules
+                    .Where(taxRule => taxRule.AFactor.Equals(1) &&
+                                      taxRule.BFactor.Equals(5) &&
+                                      taxRule.IsLinear.Equals(true) &&
+                                      taxRule.IsSquare.Equals(false) &&
+                                      taxRule.TaxCode.EndsWith("0001")));
+
+            var orders = await _orderRepository.FindByOrderStateAsync(Order.OrderState.Initial);
+            var order = orders.FirstOrDefault(order => order.CustomerOrderGroup.Customer.Type.Equals(Customer.CustomerType.Person));
+
+            Assert.NotNull(order);
+            Assert.NotEmpty(order.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("0002")));
+        }
+
+        [Fact]
+        public async Task ItCanAddMoreThan10TaxRulesToTaxConfig()
+        {
+            // Arrange
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0001");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0002");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0003");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, 5, "0004");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0005");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0006");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, 5, "0007");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0008");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0009");
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "00010");
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _taxRuleService.AddTaxRuleToCountryAsync(
+                    "PL",
+                    3,
+                    2,
+                    "0011"));
+        }
+
+        [Fact]
+        public async Task ItCannotAddLinearTaxRuleToCountryWhenCountryCodeIsInvalid()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _taxRuleService
+                .AddTaxRuleToCountryAsync("P", 0, 5, "0001"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _taxRuleService
+                .AddTaxRuleToCountryAsync("  ", 0, 5, "0001"));
+        }
+
+        [Fact]
+        public async Task ItCannotAddLinearTaxRuleToCountryWhenAFactorIsZero()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _taxRuleService
+                .AddTaxRuleToCountryAsync("PL", 0, 5, "0001"));
+        }
+
+        [Fact]
+        public async Task ItCanAddSquareTaxRuleToNewTaxConfigAnd()
+        {
+            // Arrange && Act
+            await _taxRuleService.AddTaxRuleToCountryAsync(
+                "PL",
+                1,
+                5,
+                7,
+                "0001");
+
+            // Assert
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+
+            Assert.Single(
+                taxConfig.TaxRules
+                    .Where(taxRule => taxRule.ASquareFactor.Equals(1) &&
+                                      taxRule.BSquareFactor.Equals(5) &&
+                                      taxRule.CSquareFactor.Equals(7) &&
+                                      taxRule.IsLinear.Equals(false) &&
+                                      taxRule.IsSquare.Equals(true) &&
+                                      taxRule.TaxCode.EndsWith("0001")));
+
+            var orders = await _orderRepository.FindByOrderStateAsync(Order.OrderState.Initial);
+            var order = orders.FirstOrDefault(order => order.CustomerOrderGroup.Customer.Type.Equals(Customer.CustomerType.Person));
+
+            Assert.NotNull(order);
+            Assert.Empty(order.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("0001")));
+        }
+
+        [Fact]
+        public async Task ItCanAddSquareTaxRuleToExistingTaxConfig()
+        {
+            // Arrange
+            await _taxRuleService.AddTaxRuleToCountryAsync(
+                "PL",
+                1,
+                5,
+                7,
+                "0001");
+
+            // Act
+            await _taxRuleService.AddTaxRuleToCountryAsync(
+                "PL",
+                3,
+                2,
+                7,
+                "0002");
+
+            // Assert
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+
+            Assert.Single(
+                taxConfig.TaxRules
+                    .Where(taxRule => taxRule.ASquareFactor.Equals(3) &&
+                                      taxRule.BSquareFactor.Equals(2) &&
+                                      taxRule.CSquareFactor.Equals(7) &&
+                                      taxRule.IsLinear.Equals(false) &&
+                                      taxRule.IsSquare.Equals(true) &&
+                                      taxRule.TaxCode.EndsWith("0002")));
+        }
+
+        [Fact]
+        public async Task ItCanCreateTaxConfigWithRule()
+        {
+            // Arrange & Act
+            await _taxRuleService.CreateTaxConfigWithRuleAsync(
+                "PL", new TaxRule
+                {
+                    AFactor = 1,
+                    BFactor = 5,
+                    IsLinear = true,
+                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
+                });
+
+            // Assert
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+
+            Assert.Single(taxConfig.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("1001")));
+            Assert.Equal("PL", taxConfig.CountryCode);
+            Assert.Equal(1, taxConfig.CurrentRulesCount);
+            Assert.Equal(10, taxConfig.MaxRulesCount);
+            Assert.True(taxConfig.LastModifiedDate > DateTime.UtcNow.Subtract(TimeSpan.FromSeconds(1)));
+        }
+
+        [Fact]
+        public async Task ItCanCreateTaxConfigWithRuleAndOwnMaxRulesCount()
+        {
+            // Arrange & Act
+            await _taxRuleService.CreateTaxConfigWithRuleAsync(
+                "PL", 5, new TaxRule
+                {
+                    AFactor = 1,
+                    BFactor = 5,
+                    IsLinear = true,
+                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
+                });
+
+            // Assert
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+
+            Assert.Single(taxConfig.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("1001")));
+            Assert.Equal("PL", taxConfig.CountryCode);
+            Assert.Equal(1, taxConfig.CurrentRulesCount);
+            Assert.Equal(5, taxConfig.MaxRulesCount);
+            Assert.True(taxConfig.LastModifiedDate > DateTime.UtcNow.Subtract(TimeSpan.FromSeconds(1)));
+        }
+
+        [Fact]
+        public async Task ItCannotCreateTaxConfigWithRuleWhenCountryCodeIsIsInvalid()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _taxRuleService.CreateTaxConfigWithRuleAsync(
+                    "P", new TaxRule
+                    {
+                        AFactor = 1,
+                        BFactor = 5,
+                        IsLinear = true,
+                        TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
+                    }));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _taxRuleService.CreateTaxConfigWithRuleAsync(
+                    "  ", 5, new TaxRule
+                    {
+                        AFactor = 1,
+                        BFactor = 5,
+                        IsLinear = true,
+                        TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
+                    }));
+        }
+
+        [Fact]
+        public async Task ItCanDeleteRule()
+        {
+            // Arrange
+            var taxConfig = await _taxRuleService.CreateTaxConfigWithRuleAsync(
+                "PL", 5, new TaxRule
+                {
+                    AFactor = 1,
+                    BFactor = 5,
+                    IsLinear = true,
+                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
+                });
+
+            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0002");
+
+            var taxRuleId = taxConfig.TaxRules.FirstOrDefault()!.Id;
+
+            // Act
+            await _taxRuleService.DeleteRuleAsync(taxRuleId, taxConfig.Id);
+
+            // Assert
+            Assert.Null(await _taxRuleRepository.FindByIdAsync(taxRuleId));
+        }
+
+        [Fact]
+        public async Task ItCannotDeleteLastTaxRule()
+        {
+            // Arrange
+            var taxConfig = await _taxRuleService.CreateTaxConfigWithRuleAsync(
+                "PL", 5, new TaxRule
+                {
+                    AFactor = 1,
+                    BFactor = 5,
+                    IsLinear = true,
+                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
+                });
+
+            var taxRuleId = taxConfig.TaxRules.FirstOrDefault()!.Id;
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _taxRuleService.DeleteRuleAsync(taxRuleId, taxConfig.Id));
+        }
+
+        private readonly TestDb _testDb;
+        private readonly TaxRuleService _taxRuleService;
+        private readonly TaxRuleRepository _taxRuleRepository;
+        private readonly TaxConfigRepository _taxConfigRepository;
+        private readonly OrderRepository _orderRepository;
+
+        public TaxRuleServiceTest()
+        {
+            _testDb = new TestDb();
+            var dbContext = _testDb.DbContext;
+            _taxRuleRepository = new TaxRuleRepository(dbContext);
+            _taxConfigRepository = new TaxConfigRepository(dbContext);
+            _orderRepository = new OrderRepository(dbContext);
+            _taxRuleService = new TaxRuleService(_taxRuleRepository, _taxConfigRepository, _orderRepository);
+        }
+
+        public void Dispose()
+        {
+            _testDb.Dispose();
+        }
+    }
+}

@@ -96,6 +96,7 @@ namespace LegacyFighter.Dietary.Tests
             
             // edward sprzedawca Caterinx
             AddOrder(8, Order.OrderState.Paid, Order.OrderType.Phone, 10);
+            AddOrder(9, Order.OrderState.Initial, Order.OrderType.Phone, 10);
             
             void AddOrder(long id, Order.OrderState state, Order.OrderType type, long groupId)
                 => DbContext.Orders.Add(new Order
