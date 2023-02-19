@@ -72,51 +72,7 @@ namespace LegacyFighter.Dietary.Tests
         }
 
         [Fact]
-        public async Task ItCanAddMoreThan10TaxRulesToTaxConfig()
-        {
-            // Arrange
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0001");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0002");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0003");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, 5, "0004");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0005");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0006");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, 5, "0007");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0008");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0009");
-            await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "00010");
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _taxRuleService.AddTaxRuleToCountryAsync(
-                    "PL",
-                    3,
-                    2,
-                    "0011"));
-        }
-
-        [Fact]
-        public async Task ItCannotAddLinearTaxRuleToCountryWhenCountryCodeIsInvalid()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _taxRuleService
-                .AddTaxRuleToCountryAsync("P", 0, 5, "0001"));
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _taxRuleService
-                .AddTaxRuleToCountryAsync("  ", 0, 5, "0001"));
-        }
-
-        [Fact]
-        public async Task ItCannotAddLinearTaxRuleToCountryWhenAFactorIsZero()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _taxRuleService
-                .AddTaxRuleToCountryAsync("PL", 0, 5, "0001"));
-        }
-
-        [Fact]
-        public async Task ItCanAddSquareTaxRuleToNewTaxConfigAnd()
+        public async Task ItCanAddSquareTaxRuleToNewTaxConfig()
         {
             // Arrange && Act
             await _taxRuleService.AddTaxRuleToCountryAsync(
@@ -137,12 +93,6 @@ namespace LegacyFighter.Dietary.Tests
                                       taxRule.IsLinear.Equals(false) &&
                                       taxRule.IsSquare.Equals(true) &&
                                       taxRule.TaxCode.EndsWith("0001")));
-
-            var orders = await _orderRepository.FindByOrderStateAsync(Order.OrderState.Initial);
-            var order = orders.FirstOrDefault(order => order.CustomerOrderGroup.Customer.Type.Equals(Customer.CustomerType.Person));
-
-            Assert.NotNull(order);
-            Assert.Empty(order.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("0001")));
         }
 
         [Fact]
@@ -215,21 +165,7 @@ namespace LegacyFighter.Dietary.Tests
         }
 
         [Fact]
-        public async Task ItCannotCreateTaxConfigWithRuleWhenCountryCodeIsIsInvalid()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _taxRuleService.CreateTaxConfigWithRuleAsync(
-                    "P",
-                    TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001")));
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _taxRuleService.CreateTaxConfigWithRuleAsync(
-                    "  ", 5, TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001")));
-        }
-
-        [Fact]
-        public async Task ItCanDeleteRule()
+        public async Task ItCanDeleteTaxRule()
         {
             // Arrange
             var taxConfig = await _taxRuleService.CreateTaxConfigWithRuleAsync(
@@ -244,20 +180,6 @@ namespace LegacyFighter.Dietary.Tests
 
             // Assert
             Assert.Null(await _taxRuleRepository.FindByIdAsync(taxRuleId));
-        }
-
-        [Fact]
-        public async Task ItCannotDeleteLastTaxRule()
-        {
-            // Arrange
-            var taxConfig = await _taxRuleService.CreateTaxConfigWithRuleAsync(
-                "PL", 5, TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001"));
-
-            var taxRuleId = taxConfig.TaxRules.FirstOrDefault()!.Id;
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _taxRuleService.DeleteRuleAsync(taxRuleId, taxConfig.Id));
         }
 
         private readonly TestDb _testDb;

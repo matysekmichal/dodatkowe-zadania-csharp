@@ -36,7 +36,7 @@ namespace LegacyFighter.Dietary.Models
             MaxRulesCount = maxRulesCount;
             CurrentRulesCount = taxRules.Count;
             TaxRules = taxRules;
-            LastModifiedDate = DateTime.Now;
+            LastModifiedDate = DateTime.UtcNow;
         }
 
         public void AddTaxRule(TaxRule taxRule)

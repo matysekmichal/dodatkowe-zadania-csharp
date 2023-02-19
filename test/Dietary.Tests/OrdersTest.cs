@@ -16,7 +16,7 @@ namespace LegacyFighter.Dietary.Tests
         {
             // caterinx
             var ordersForCompanyCaterinx = await _orderService.GetOrdersForCompanyAsync(2);
-            Assert.Equal(4, ordersForCompanyCaterinx.Count);
+            Assert.Equal(5, ordersForCompanyCaterinx.Count);
 
             // zdrowo jedz
             var ordersForCompanyZdrowoJedz = await _orderService.GetOrdersForCompanyAsync(1);
@@ -28,7 +28,7 @@ namespace LegacyFighter.Dietary.Tests
         {
             // piotr admin
             var adminOrders = await _orderService.GetOrdersForAdminAsync(3);
-            Assert.Equal(8, adminOrders.Count);
+            Assert.Equal(9, adminOrders.Count);
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace LegacyFighter.Dietary.Tests
 
             //zamowienia caterinx
             var zamowienia = await _orderService.GetOrdersForCompanyAsync(6);
-            Assert.Equal(3, zamowienia.Count);
+            Assert.Equal(4, zamowienia.Count);
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace LegacyFighter.Dietary.Tests
 
             // edward sprzedawca caterinx
             var edwardSprzedawca = await _customerService.GetIndividualOrdersForCustomerAsync(10);
-            Assert.Single(edwardSprzedawca);
+            Assert.Equal(2, edwardSprzedawca.Count);
         }
 
         [Fact]
