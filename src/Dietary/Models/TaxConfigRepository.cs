@@ -10,7 +10,7 @@ namespace LegacyFighter.Dietary.Models
     public interface ITaxConfigRepository
     {
         Task<TaxConfig> FindByIdAsync(long id);
-        Task<TaxConfig> FindByCountryCodeAsync(string countryCode);
+        Task<TaxConfig> FindByCountryCodeAsync(CountryCode countryCode);
         Task<List<TaxConfig>> FindAllAsync();
         Task SaveAsync(TaxConfig taxConfig);
         Task DeleteAsync(TaxConfig taxConfig);
@@ -32,10 +32,10 @@ namespace LegacyFighter.Dietary.Models
                 .SingleOrDefaultAsync(x => x.Id == id);
 
 
-        public Task<TaxConfig> FindByCountryCodeAsync(string countryCode)
+        public Task<TaxConfig> FindByCountryCodeAsync(CountryCode countryCode)
             => Query()
                 .SingleOrDefaultAsync(x =>
-                    x.CountryCode.Equals(countryCode, StringComparison.InvariantCultureIgnoreCase));
+                    x.CountryCode.Equals(countryCode));
 
         public Task<List<TaxConfig>> FindAllAsync()
             => Query().ToListAsync();

@@ -19,7 +19,7 @@ namespace LegacyFighter.Dietary.Tests
                 "0001");
 
             // Assert
-            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync(CountryCode.Of("PL"));
 
             Assert.Single(
                 taxConfig.TaxRules
@@ -54,7 +54,7 @@ namespace LegacyFighter.Dietary.Tests
                 "0002");
 
             // Assert
-            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync(CountryCode.Of("PL"));
 
             Assert.Single(
                 taxConfig.TaxRules
@@ -127,13 +127,13 @@ namespace LegacyFighter.Dietary.Tests
                 "0001");
 
             // Assert
-            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync(CountryCode.Of("PL"));
 
             Assert.Single(
                 taxConfig.TaxRules
-                    .Where(taxRule => taxRule.ASquareFactor.Equals(1) &&
-                                      taxRule.BSquareFactor.Equals(5) &&
-                                      taxRule.CSquareFactor.Equals(7) &&
+                    .Where(taxRule => taxRule.AFactor.Equals(1) &&
+                                      taxRule.BFactor.Equals(5) &&
+                                      taxRule.CFactor.Equals(7) &&
                                       taxRule.IsLinear.Equals(false) &&
                                       taxRule.IsSquare.Equals(true) &&
                                       taxRule.TaxCode.EndsWith("0001")));
@@ -165,13 +165,13 @@ namespace LegacyFighter.Dietary.Tests
                 "0002");
 
             // Assert
-            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync(CountryCode.Of("PL"));
 
             Assert.Single(
                 taxConfig.TaxRules
-                    .Where(taxRule => taxRule.ASquareFactor.Equals(3) &&
-                                      taxRule.BSquareFactor.Equals(2) &&
-                                      taxRule.CSquareFactor.Equals(7) &&
+                    .Where(taxRule => taxRule.AFactor.Equals(3) &&
+                                      taxRule.BFactor.Equals(2) &&
+                                      taxRule.CFactor.Equals(7) &&
                                       taxRule.IsLinear.Equals(false) &&
                                       taxRule.IsSquare.Equals(true) &&
                                       taxRule.TaxCode.EndsWith("0002")));
@@ -182,19 +182,14 @@ namespace LegacyFighter.Dietary.Tests
         {
             // Arrange & Act
             await _taxRuleService.CreateTaxConfigWithRuleAsync(
-                "PL", new TaxRule
-                {
-                    AFactor = 1,
-                    BFactor = 5,
-                    IsLinear = true,
-                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
-                });
+                "PL",
+                TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001"));
 
             // Assert
-            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync(CountryCode.Of("PL"));
 
             Assert.Single(taxConfig.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("1001")));
-            Assert.Equal("PL", taxConfig.CountryCode);
+            Assert.True(taxConfig.CountryCode.Equals(CountryCode.Of("PL")));
             Assert.Equal(1, taxConfig.CurrentRulesCount);
             Assert.Equal(10, taxConfig.MaxRulesCount);
             Assert.True(taxConfig.LastModifiedDate > DateTime.UtcNow.Subtract(TimeSpan.FromSeconds(1)));
@@ -205,19 +200,15 @@ namespace LegacyFighter.Dietary.Tests
         {
             // Arrange & Act
             await _taxRuleService.CreateTaxConfigWithRuleAsync(
-                "PL", 5, new TaxRule
-                {
-                    AFactor = 1,
-                    BFactor = 5,
-                    IsLinear = true,
-                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
-                });
+                "PL",
+                5,
+                TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001"));
 
             // Assert
-            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync("PL");
+            var taxConfig = await _taxConfigRepository.FindByCountryCodeAsync(CountryCode.Of("PL"));
 
             Assert.Single(taxConfig.TaxRules.FindAll(taxRule => taxRule.TaxCode.EndsWith("1001")));
-            Assert.Equal("PL", taxConfig.CountryCode);
+            Assert.True(taxConfig.CountryCode.Equals(CountryCode.Of("PL")));
             Assert.Equal(1, taxConfig.CurrentRulesCount);
             Assert.Equal(5, taxConfig.MaxRulesCount);
             Assert.True(taxConfig.LastModifiedDate > DateTime.UtcNow.Subtract(TimeSpan.FromSeconds(1)));
@@ -229,23 +220,12 @@ namespace LegacyFighter.Dietary.Tests
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _taxRuleService.CreateTaxConfigWithRuleAsync(
-                    "P", new TaxRule
-                    {
-                        AFactor = 1,
-                        BFactor = 5,
-                        IsLinear = true,
-                        TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
-                    }));
+                    "P",
+                    TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001")));
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _taxRuleService.CreateTaxConfigWithRuleAsync(
-                    "  ", 5, new TaxRule
-                    {
-                        AFactor = 1,
-                        BFactor = 5,
-                        IsLinear = true,
-                        TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
-                    }));
+                    "  ", 5, TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001")));
         }
 
         [Fact]
@@ -253,13 +233,7 @@ namespace LegacyFighter.Dietary.Tests
         {
             // Arrange
             var taxConfig = await _taxRuleService.CreateTaxConfigWithRuleAsync(
-                "PL", 5, new TaxRule
-                {
-                    AFactor = 1,
-                    BFactor = 5,
-                    IsLinear = true,
-                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
-                });
+                "PL", 5, TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001"));
 
             await _taxRuleService.AddTaxRuleToCountryAsync("PL", 1, 5, "0002");
 
@@ -277,13 +251,7 @@ namespace LegacyFighter.Dietary.Tests
         {
             // Arrange
             var taxConfig = await _taxRuleService.CreateTaxConfigWithRuleAsync(
-                "PL", 5, new TaxRule
-                {
-                    AFactor = 1,
-                    BFactor = 5,
-                    IsLinear = true,
-                    TaxCode = $"A. 899. {DateTime.UtcNow.Year}1001"
-                });
+                "PL", 5, TaxRule.CreateLinearTaxRule(1, 5, $"A. 899. {DateTime.UtcNow.Year}1001"));
 
             var taxRuleId = taxConfig.TaxRules.FirstOrDefault()!.Id;
 

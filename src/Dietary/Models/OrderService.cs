@@ -128,14 +128,13 @@ namespace LegacyFighter.Dietary.Models
             {
                 if (tax.IsLinear)
                 {
-                    initialValue *= tax.AFactor + tax.BFactor;
+                    initialValue = initialValue + initialValue * tax.AFactor + tax.BFactor;
                 }
 
                 if (tax.IsSquare)
                 {
-                    initialValue = (decimal) Math.Pow((double) initialValue, 2) * tax.ASquareFactor +
-                                   (initialValue * tax.BFactor) +
-                                   tax.CSquareFactor;
+                    initialValue = initialValue + (decimal) Math.Pow((double) initialValue, 2) * tax.AFactor +
+                                   initialValue * tax.BFactor + tax.CFactor ?? 0;
                 }
             }
 

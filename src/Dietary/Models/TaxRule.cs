@@ -1,4 +1,6 @@
-﻿namespace LegacyFighter.Dietary.Models
+﻿using System;
+
+namespace LegacyFighter.Dietary.Models
 {
     public class TaxRule
     {
@@ -7,24 +9,34 @@
         public bool IsLinear { get; set; }
         public int AFactor { get; set; }
         public int BFactor { get; set; }
+        public int? CFactor { get; set; }
         public bool IsSquare { get; set; }
-        public int ASquareFactor { get; set; }
-        public int BSquareFactor { get; set; }
-        public int CSquareFactor { get; set; }
         public long TaxConfigId { get; set; }
-        public TaxConfig TaxConfig { get;set; }
+        public TaxConfig TaxConfig { get; set; }
 
-        public static TaxRule LinearRule(int a, int b, string taxCode)
+        private TaxRule(int aFactor, int bFactor, int? cFactor, string taxCode)
         {
-            var taxRule = new TaxRule
+            if (aFactor == 0)
             {
-                IsLinear = true,
-                TaxCode = taxCode,
-                AFactor = a,
-                BFactor = b
-            };
+                throw new InvalidOperationException("Invalid aFactor");
+            }
 
-            return taxRule;
+            AFactor = aFactor;
+            BFactor = bFactor;
+            CFactor = cFactor;
+            IsLinear = cFactor == null;
+            IsSquare = cFactor != null;
+            TaxCode = taxCode;
+        }
+
+        public static TaxRule CreateLinearTaxRule(int aFactor, int bFactor, string taxCode)
+        {
+            return new TaxRule(aFactor, bFactor, null, taxCode);
+        }
+
+        public static TaxRule CreateSquareTaxRule(int aFactor, int bFactor, int cFactor, string taxCode)
+        {
+            return new TaxRule(aFactor, bFactor, cFactor, taxCode);
         }
     }
 }

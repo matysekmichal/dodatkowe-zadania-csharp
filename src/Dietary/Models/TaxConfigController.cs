@@ -21,18 +21,18 @@ namespace LegacyFighter.Dietary.Models
             var map = new Dictionary<string, List<TaxRule>>();
             foreach (var tax in taxConfigs)
             {
-                if (!map.ContainsKey(tax.CountryCode))
+                if (!map.ContainsKey(tax.CountryCode.Value))
                 {
                     if (tax.TaxRules is null)
                     {
                         tax.TaxRules = new List<TaxRule>();
                     }
 
-                    map.Add(tax.CountryCode, tax.TaxRules);
+                    map.Add(tax.CountryCode.Value, tax.TaxRules);
                 }
                 else
                 {
-                    map[tax.CountryCode].AddRange(tax.TaxRules);
+                    map[tax.CountryCode.Value].AddRange(tax.TaxRules);
                 }
             }
             
